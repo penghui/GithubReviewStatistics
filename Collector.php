@@ -40,36 +40,43 @@ try {
 if (!is_dir(__DIR__ . "/data")) {
 	exit("data dir does not exist");
 }
-
 if (!is_writable(__DIR__ . "/data")) {
 	exit("data dir is not writable");
 }
 
-for ($pr = $startPRNumber; $pr <= $endPRNumber; $pr++) {
-	$filename = __DIR__ . "/data/" . $owner . "_" . $repo . "_" . $pr . ".json";
-	if (file_exists($filename)) {
-		echo "skipping ".$pr."\n";
+try {
+
+	for ($pr = $startPRNumber; $pr <= $endPRNumber; $pr++) {
+		//skip if local file cache exists
+		$filename = __DIR__ . "/data/{$owner}_{$repo}_{$pr}.json";
+		if (file_exists($filename)) {
+			echo "skipping " . $pr . "\n";
+			ob_flush();
+			flush();
+			continue;
+		}
+
+		echo "fetching " . $pr . "...\n";
 		ob_flush();
 		flush();
-		continue;
+
+		//fetch pull request
+		$pullURL = "https://api.github.com/repos/" . $owner . "/" . $repo . "/pulls/" . $pr;
+		$pullURLResponse = $client->request("GET", $pullURL, $options);
+		$pullObj = json_decode($pullURLResponse->getBody());
+
+		//fetch reviews
+		$reviewsURL = "https://api.github.com/repos/" . $owner . "/" . $repo . "/pulls/" . $pr . "/reviews";
+		$reviewsURLResponse = $client->request("GET", $reviewsURL, $options);
+		$reviewsObj = json_decode($reviewsURLResponse->getBody());
+
+		//save to local file cache
+		$pullObj->reviews = $reviewsObj;
+		file_put_contents($filename, json_encode($pullObj));
 	}
 
-	echo "fetching ".$pr."\n";
-	ob_flush();
-	flush();
+	echo('All Done');
 
-	$pullURL = "https://api.github.com/repos/".$owner."/".$repo."/pulls/".$pr;
-	$pullURLResponse = $client->request("GET", $pullURL, $options);
-	$pullObj = json_decode($pullURLResponse->getBody());
-
-	$reviewsURL = "https://api.github.com/repos/".$owner."/".$repo."/pulls/".$pr."/reviews";
-	$reviewsURLResponse = $client->request("GET", $reviewsURL, $options);
-	$reviewsObj = json_decode($reviewsURLResponse->getBody());
-
-	$pullObj->reviews = $reviewsObj;
-
-
-	file_put_contents($filename, json_encode($pullObj));
+} catch(Exception $e) {
+	exit($e->getMessage());
 }
-
-echo ('done');
