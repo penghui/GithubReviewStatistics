@@ -51,7 +51,7 @@ foreach ($files as $file) {
 
 	foreach ($reviewers as $reviewer => $count) {
 		if($reviewer != $author)
-			$reviewerStatistics[$reviewer]++;
+			@$reviewerStatistics[$reviewer]++;
 	}
 
 	$reviewerStr = "";
@@ -80,7 +80,7 @@ foreach ($files as $file) {
 	<?php
 	arsort($reviewerStatistics, SORT_NUMERIC);
 	foreach ($reviewerStatistics as $reviewer => $count) {
-		echo "<tr><td>".$reviewer."</td><td>".$count."</td></tr>\n";
+		echo "<tr><td>{$reviewer}</td><td>{$count}</td></tr>\n";
 	}
 	?>
 
@@ -101,11 +101,11 @@ foreach ($files as $file) {
 	usort($pullRequestStatistics, function($s1, $s2){return $s1["number"] < $s2["number"];});
 	foreach ($pullRequestStatistics as $stat) {
 		echo "<tr>";
-		echo "<td><a href='https://github.com/tuhu/Tuhu_iOS/pull/".$stat["number"]."' title='".$stat["state"]."'>".$stat["number"]."</a></td>";
+		echo "<td><a href='https://github.com/{$owner}/{$repo}/pull/{$stat["number"]}' title='{$stat["state"]}'>{$stat["number"]}</a></td>";
 		echo "<td>" . strtoupper(substr($stat["state"], 0, 1)) . ($stat["merged"]?"M":".") . "</td>";
 		echo "<td width='50%'>".$stat["title"]."</td>";
-		echo "<td>".$stat["author"]."</td>";
-		echo "<td>".$stat["reviewerStr"]."</td>";
+		echo "<td>{$stat["author"]}</td>";
+		echo "<td>{$stat["reviewerStr"]}</td>";
 		echo "</tr>\n";
 	}
 	?>
